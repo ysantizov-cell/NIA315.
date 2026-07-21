@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Mental — NIA 315 (Revisada)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f0f2f8;
+    min-height: 100vh;
+    color: #2d3a6e;
+    overflow-x: hidden;
+  }
+
+  .app-container {
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== VISTA GENERAL ===== */
+  .overview-view {
+    width: 100%;
+    min-height: 100vh;
+    padding: 25px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+    position: relative;
+  }
+
+  .overview-view.hidden {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Banner superior instructivo */
+  .instruction-banner {
+    background: linear-gradient(135deg, #3b4f8c, #5b72b3);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(59, 79, 140, 0.3);
+    animation: bannerPulse 2s ease-in-out infinite;
+  }
+
+  .instruction-banner .finger {
+    font-size: 1.3rem;
+    animation: fingerTap 1s ease-in-out infinite;
+  }
+
+  .main-title {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .main-title h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #3b4f8c;
+    letter-spacing: -0.5px;
+  }
+
+  .main-title p {
+    font-size: 0.9rem;
+    color: #7a8bb5;
+    margin-top: 3px;
+  }
+
+  .mindmap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 18px 50px;
+    max-width: 1050px;
+    width: 100%;
+    margin-top: 20px;
+    position: relative;
+  }
+
+  /* Líneas conectoras SVG */
+  .connectors-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .node-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .node-wrapper.top-left { justify-content: flex-end; flex-direction: row-reverse; }
+  .node-wrapper.top-right { justify-content: flex-start; }
+  .node-wrapper.bottom-left { justify-content: flex-end; flex-direction: row-reverse; }
+  .node-wrapper.bottom-right { justify-content: flex-start; }
+
+  /* Nodos secundarios (hijos) */
+  .child-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .node-wrapper.top-left .child-nodes { align-items: flex-end; }
+  .node-wrapper.top-right .child-nodes { align-items: flex-start; }
+  .node-wrapper.bottom-left .child-nodes { align-items: flex-end; }
+  .node-wrapper.bottom-right .child-nodes { align-items: flex-start; }
+
+  .child-node {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #5a6a9a;
+    box-shadow: 0 2px 10px rgba(59, 79, 140, 0.06);
+    border: 1px solid #e2e6f0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 150px;
+    transition: all 0.3s ease;
+  }
+
+  .child-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .child-icon.blue { background: #5b72b3; color: white; }
+  .child-icon.yellow { background: #f5c156; color: white; }
+
+  /* ===== NODO PRINCIPAL MEJORADO ===== */
+  .main-node {
+    width: 195px;
+    height: 130px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+    border: 3px solid transparent;
+  }
+
+  .main-node:hover {
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+  }
+
+  .main-node.blue {
+    background: linear-gradient(135deg, #5b72b3, #3b4f8c);
+    color: white;
+  }
+
+  .main-node.blue:hover {
+    border-color: #8aa4ff;
+    box-shadow: 0 14px 40px rgba(91, 114, 179, 0.35);
+  }
+
+  .main-node.yellow {
+    background: linear-gradient(135deg, #f5c156, #e5a532);
+    color: white;
+  }
+
+  .main-node.yellow:hover {
+    border-color: #ffe082;
+    box-shadow: 0 14px 40px rgba(245, 193, 86, 0.4);
+  }
+
+  .main-node .node-icon {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+
+  .main-node .node-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .main-node .node-subtitle {
+    font-size: 0.68rem;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+
+  /* ===== BARRA "CLICK AQUÍ" ===== */
+  .click-bar {
+    position: absolute;
+    bottom: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: #3b4f8c;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    border: 2px solid #d0d8e8;
+    white-space: nowrap;
+    animation: clickBarBounce 1.8s ease-in-out infinite;
+    z-index: 10;
+  }
+
+  .click-bar .arrow {
+    font-size: 0.8rem;
+    animation: arrowWiggle 1s ease-in-out infinite;
+  }
+
+  .main-node:hover .click-bar {
+    background: #3b4f8c;
+    color: white;
+    border-color: #3b4f8c;
+  }
+
+  .main-node.yellow:hover .click-bar {
+    background: #e5a532;
+    border-color: #e5a532;
+  }
+
+  /* ===== RING PULSANTE ===== */
+  .pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    border: 3px solid rgba(255,255,255,0.6);
+    opacity: 0;
+    pointer-events: none;
+    animation: ringPulse 2.5s ease-out infinite;
+  }
+
+  .main-node:nth-child(2) .pulse-ring,
+  .node-wrapper:nth-child(2) .pulse-ring,
+  .node-wrapper:nth-child(4) .pulse-ring { animation-delay: 0.5s; }
+
+  /* ===== VISTA DETALLE ===== */
+  .detail-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: #f0f2f8;
+    transform: translateX(100%);
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail-view.active {
+    transform: translateX(0);
+  }
+
+  .detail-header {
+    padding: 20px 35px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 1px solid #e2e6f0;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .back-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 2px solid #d0d8e8;
+    background: white;
+    color: #3b4f8c;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-weight: 700;
+  }
+
+  .back-btn:hover {
+    background: #3b4f8c;
+    color: white;
+    border-color: #3b4f8c;
+    transform: translateX(-3px);
+  }
+
+  .detail-title-area {
+    flex: 1;
+  }
+
+  .detail-title-area h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #3b4f8c;
+  }
+
+  .detail-title-area p {
+    font-size: 0.82rem;
+    color: #7a8bb5;
+    margin-top: 2px;
+  }
+
+  .detail-color-bar {
+    width: 5px;
+    height: 45px;
+    border-radius: 10px;
+  }
+
+  .detail-content {
+    padding: 25px 35px;
+    flex: 1;
+    max-width: 850px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .detail-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 14px rgba(59, 79, 140, 0.05);
+    border: 1px solid #e8ecf5;
+    transition: all 0.3s ease;
+    animation: slideInRight 0.5s ease backwards;
+  }
+
+  .detail-card:hover {
+    box-shadow: 0 6px 24px rgba(59, 79, 140, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .detail-card:nth-child(1) { animation-delay: 0.1s; }
+  .detail-card:nth-child(2) { animation-delay: 0.15s; }
+  .detail-card:nth-child(3) { animation-delay: 0.2s; }
+  .detail-card:nth-child(4) { animation-delay: 0.25s; }
+  .detail-card:nth-child(5) { animation-delay: 0.3s; }
+  .detail-card:nth-child(6) { animation-delay: 0.35s; }
+  .detail-card:nth-child(7) { animation-delay: 0.4s; }
+
+  .detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .detail-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .detail-card h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2d3a6e;
+  }
+
+  .detail-card p {
+    font-size: 0.85rem;
+    color: #5a6a9a;
+    line-height: 1.6;
+    padding-left: 44px;
+  }
+
+  .detail-card ul {
+    margin: 6px 0 0 44px;
+    padding-left: 16px;
+  }
+
+  .detail-card li {
+    font-size: 0.82rem;
+    color: #5a6a9a;
+    line-height: 1.65;
+    margin-bottom: 3px;
+  }
+
+  .tag-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-left: 6px;
+  }
+
+  .tag-req { background: #fee2e2; color: #dc2626; }
+  .tag-info { background: #dcfce7; color: #16a34a; }
+  .tag-guide { background: #fef3c7; color: #d97706; }
+
+  /* ===== ANIMACIONES ===== */
+  @keyframes bannerPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(59, 79, 140, 0.3); }
+    50% { box-shadow: 0 6px 30px rgba(59, 79, 140, 0.5); }
+  }
+
+  @keyframes fingerTap {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+  }
+
+  @keyframes clickBarBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+  }
+
+  @keyframes arrowWiggle {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(3px); }
+    75% { transform: translateX(-2px); }
+  }
+
+  @keyframes ringPulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+    100% { transform: translate(-50%, -50%) scale(1.25); opacity: 0; }
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .overview-view .main-node {
+    animation: popIn 0.6s ease backwards;
+  }
+
+  .overview-view .node-wrapper:nth-child(1) .main-node { animation-delay: 0.1s; }
+  .overview-view .node-wrapper:nth-child(2) .main-node { animation-delay: 0.2s; }
+  .overview-view .node-wrapper:nth-child(3) .main-node { animation-delay: 0.3s; }
+  .overview-view .node-wrapper:nth-child(4) .main-node { animation-delay: 0.4s; }
+
+  /* Nodo central */
+  .center-hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+  }
+
+  .center-hub-inner {
+    width: 90px;
+    height: 90px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 3px solid #e2e6f0;
+    font-size: 2rem;
+    animation: popIn 0.8s ease 0.5s backwards;
+  }
+
+  .center-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 58px);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #7a8bb5;
+    white-space: nowrap;
+    background: white;
+    padding: 3px 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .mindmap-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      gap: 35px;
+    }
+    .node-wrapper { flex-direction: column !important; align-items: center !important; }
+    .child-nodes { align-items: center !important; flex-direction: row !important; flex-wrap: wrap; justify-content: center; }
+    .child-node { min-width: auto; font-size: 0.72rem; }
+    .main-node { width: 170px; height: 115px; }
+    .instruction-banner { font-size: 0.78rem; padding: 10px 18px; }
+    .detail-content { padding: 18px; }
+    .detail-header { padding: 16px 20px; }
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="app-container">
+  <!-- ===== VISTA GENERAL ===== -->
+  <div class="overview-view" id="overviewView">
+
+    <div class="instruction-banner">
+      <span class="finger">👆</span>
+      <span>Haz clic en cualquier cuadro de color para ver el contenido detallado</span>
+    </div>
+
+    <div class="main-title">
+      <h1>📋 Mapa Mental — NIA 315 (Revisada)</h1>
+      <p>Identificación y Valoración de Riesgos de Incorrección Material</p>
+    </div>
+
+    <div class="mindmap-grid">
+      <!-- SVG conectores -->
+      <svg class="connectors-svg" viewBox="0 0 1050 380" preserveAspectRatio="none">
+        <path d="M 260 70 Q 400 70 460 170" fill="none" stroke="#5b72b3" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.35"/>
+        <path d="M 790 70 Q 650 70 590 170" fill="none" stroke="#f5c156" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.35"/>
+        <path d="M 260 310 Q 400 310 460 210" fill="none" stroke="#5b72b3" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.35"/>
+        <path d="M 790 310 Q 650 310 590 210" fill="none" stroke="#f5c156" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.35"/>
+        <circle cx="460" cy="170" r="3.5" fill="#5b72b3" opacity="0.4"/>
+        <circle cx="590" cy="170" r="3.5" fill="#f5c156" opacity="0.4"/>
+        <circle cx="460" cy="210" r="3.5" fill="#5b72b3" opacity="0.4"/>
+        <circle cx="590" cy="210" r="3.5" fill="#f5c156" opacity="0.4"/>
+      </svg>
+
+      <!-- NODO SUPERIOR IZQUIERDO -->
+      <div class="node-wrapper top-left">
+        <div class="child-nodes">
+          <div class="child-node"><span class="child-icon blue">+</span>Objetivo</div>
+          <div class="child-node"><span class="child-icon blue">+</span>Alcance</div>
+          <div class="child-node"><span class="child-icon blue">+</span>Definiciones</div>
+        </div>
+        <div class="main-node blue" onclick="openDetail('fundamentos')">
+          <div class="pulse-ring"></div>
+          <div class="node-icon">🎯</div>
+          <div class="node-title">Fundamentos</div>
+          <div class="node-subtitle">Base normativa</div>
+          <div class="click-bar">
+            <span>Ver contenido</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NODO SUPERIOR DERECHO -->
+      <div class="node-wrapper top-right">
+        <div class="main-node yellow" onclick="openDetail('procedimientos')">
+          <div class="pulse-ring"></div>
+          <div class="node-icon">🔍</div>
+          <div class="node-title">Procedimientos de<br>Valoración del Riesgo</div>
+          <div class="click-bar">
+            <span>Ver contenido</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+        <div class="child-nodes">
+          <div class="child-node"><span class="child-icon yellow">+</span>Indagaciones</div>
+          <div class="child-node"><span class="child-icon yellow">+</span>Analíticos</div>
+          <div class="child-node"><span class="child-icon yellow">+</span>Observación</div>
+        </div>
+      </div>
+
+      <!-- NODO INFERIOR IZQUIERDO -->
+      <div class="node-wrapper bottom-left">
+        <div class="child-nodes">
+          <div class="child-node"><span class="child-icon blue">+</span>Factores Externos</div>
+          <div class="child-node"><span class="child-icon blue">+</span>Políticas Contables</div>
+          <div class="child-node"><span class="child-icon blue">+</span>Objetivos y Estrategias</div>
+        </div>
+        <div class="main-node blue" onclick="openDetail('entidad')">
+          <div class="pulse-ring"></div>
+          <div class="node-icon">🏢</div>
+          <div class="node-title">Conocimiento de<br>la Entidad</div>
+          <div class="click-bar">
+            <span>Ver contenido</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NODO INFERIOR DERECHO -->
+      <div class="node-wrapper bottom-right">
+        <div class="main-node yellow" onclick="openDetail('riesgos')">
+          <div class="pulse-ring"></div>
+          <div class="node-icon">⚠️</div>
+          <div class="node-title">Identificación y<br>Valoración de Riesgos</div>
+          <div class="click-bar">
+            <span>Ver contenido</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+        <div class="child-nodes">
+          <div class="child-node"><span class="child-icon yellow">+</span>Riesgos Significativos</div>
+          <div class="child-node"><span class="child-icon yellow">+</span>Afirmaciones</div>
+          <div class="child-node"><span class="child-icon yellow">+</span>Revisión Continua</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nodo central -->
+    <div class="center-hub">
+      <div class="center-hub-inner">🧠</div>
+      <div class="center-label">NIA 315</div>
+    </div>
+  </div>
+
+  <!-- ===== VISTAS DETALLE ===== -->
+
+  <!-- Detalle: Fundamentos -->
+  <div class="detail-view" id="detail-fundamentos">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div class="detail-color-bar" style="background:#5b72b3;"></div>
+      <div class="detail-title-area">
+        <h2>🎯 Fundamentos de la NIA 315</h2>
+        <p>Base normativa y objetivos principales</p>
+      </div>
+    </div>
+    <div class="detail-content">
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">🎯</div>
+          <h3>Objetivo <span class="tag-pill tag-req">Requerimiento</span></h3>
+        </div>
+        <p>Identificar y valorar los riesgos de incorrección material, debida a <strong>fraude o error</strong>, tanto en los estados financieros como en las afirmaciones, para proporcionar una base para el diseño e implementación de respuestas a los riesgos valorados.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">📅</div>
+          <h3>Alcance y Vigencia <span class="tag-pill tag-info">Info</span></h3>
+        </div>
+        <p>Aplicable a auditorías de estados financieros correspondientes a periodos terminados a partir del <strong>15 de diciembre de 2013</strong>. Debe interpretarse conjuntamente con la NIA 200.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">📖</div>
+          <h3>Definiciones Clave <span class="tag-pill tag-guide">Guía</span></h3>
+        </div>
+        <ul>
+          <li><strong>Afirmaciones:</strong> Manifestaciones de la dirección sobre reconocimiento, medición y presentación</li>
+          <li><strong>Riesgo de Negocio:</strong> Riesgo que afecta la capacidad de la entidad para alcanzar sus objetivos</li>
+          <li><strong>Control Interno:</strong> Proceso para proporcionar seguridad razonable sobre objetivos de información financiera</li>
+          <li><strong>Riesgo Significativo:</strong> Riesgo que requiere consideración especial en la auditoría</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle: Procedimientos -->
+  <div class="detail-view" id="detail-procedimientos">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div class="detail-color-bar" style="background:#f5c156;"></div>
+      <div class="detail-title-area">
+        <h2>🔍 Procedimientos de Valoración del Riesgo</h2>
+        <p>Métodos para obtener conocimiento de la entidad</p>
+      </div>
+    </div>
+    <div class="detail-content">
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">💬</div>
+          <h3>Indagaciones <span class="tag-pill tag-req">Req. §6(a)</span></h3>
+        </div>
+        <ul>
+          <li>Ante la <strong>dirección</strong> y responsables de información financiera</li>
+          <li>Ante la <strong>función de auditoría interna</strong> (si existe)</li>
+          <li>Ante <strong>otras personas</strong> de la entidad con información relevante</li>
+          <li>Asesores legales, ventas, TI, gestión de riesgos</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">📊</div>
+          <h3>Procedimientos Analíticos <span class="tag-pill tag-req">Req. §6(b)</span></h3>
+        </div>
+        <p>Análisis de ratios, tendencias y relaciones entre datos financieros y no financieros. Ayudan a identificar transacciones inusuales, cantidades inesperadas y posibles riesgos de <strong>fraude</strong>.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">👁️</div>
+          <h3>Observación e Inspección <span class="tag-pill tag-req">Req. §6(c)</span></h3>
+        </div>
+        <ul>
+          <li>Operaciones de la entidad</li>
+          <li>Documentos, registros y manuales de control interno</li>
+          <li>Informes de gestión y actas de reuniones</li>
+          <li>Locales e instalaciones industriales</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">🗣️</div>
+          <h3>Discusión del Equipo <span class="tag-pill tag-req">Req. §10</span></h3>
+        </div>
+        <p>El <strong>socio del encargo</strong> y miembros clave discuten el grado de exposición de los estados financieros a incorrecciones materiales por fraude o error, considerando hechos y circunstancias específicos.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle: Conocimiento Entidad -->
+  <div class="detail-view" id="detail-entidad">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div class="detail-color-bar" style="background:#5b72b3;"></div>
+      <div class="detail-title-area">
+        <h2>🏢 Conocimiento de la Entidad y su Entorno</h2>
+        <p>Elementos esenciales a comprender (Apartado 11)</p>
+      </div>
+    </div>
+    <div class="detail-content">
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">🌍</div>
+          <h3>Factores Externos <span class="tag-pill tag-req">§11(a)</span></h3>
+        </div>
+        <ul>
+          <li>Condiciones del <strong>sector</strong> (competencia, tecnología, ciclos)</li>
+          <li>Entorno <strong>normativo y regulatorio</strong></li>
+          <li>Marco de información financiera aplicable</li>
+          <li>Condiciones económicas generales</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">🏭</div>
+          <h3>Naturaleza de la Entidad <span class="tag-pill tag-req">§11(b)</span></h3>
+        </div>
+        <ul>
+          <li>Operaciones, estructura de <strong>gobierno y propiedad</strong></li>
+          <li>Tipos de inversiones y entidades con cometido especial</li>
+          <li>Modo de estructuración y <strong>financiación</strong></li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">📐</div>
+          <h3>Políticas Contables <span class="tag-pill tag-req">§11(c)</span></h3>
+        </div>
+        <p>Selección y aplicación de políticas contables, motivos de cambios. El auditor evalúa si son <strong>adecuadas a sus actividades</strong> y congruentes con el marco normativo y el sector.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">🎯</div>
+          <h3>Objetivos, Estrategias y Riesgos de Negocio <span class="tag-pill tag-req">§11(d)</span></h3>
+        </div>
+        <p>Conocimiento de los riesgos de negocio que pueden dar lugar a <strong>incorrecciones materiales</strong>. El riesgo de negocio es más amplio pero engloba el riesgo de incorrección material.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">📈</div>
+          <h3>Medición y Revisión del Resultado <span class="tag-pill tag-req">§11(e)</span></h3>
+        </div>
+        <p>KPIs, presupuestos, incentivos, comparativas. Las <strong>presiones por resultados</strong> pueden desencadenar actuaciones que incrementen riesgos de incorrección material o fraude.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#e8ecf5;">🛡️</div>
+          <h3>Control Interno — 5 Componentes <span class="tag-pill tag-req">§12-24</span></h3>
+        </div>
+        <p>El auditor obtiene conocimiento del control interno <strong>relevante para la auditoría</strong>, evaluando el diseño e implementación de:</p>
+        <ul>
+          <li><strong>1. Entorno de Control</strong> — Cultura de integridad y ética</li>
+          <li><strong>2. Valoración del Riesgo</strong> — Proceso de identificación de riesgos</li>
+          <li><strong>3. Sistema de Información</strong> — TI, registros, comunicación</li>
+          <li><strong>4. Actividades de Control</strong> — Autorización, segregación, físicos</li>
+          <li><strong>5. Seguimiento</strong> — Evaluación continua de eficacia</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle: Identificación Riesgos -->
+  <div class="detail-view" id="detail-riesgos">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div class="detail-color-bar" style="background:#f5c156;"></div>
+      <div class="detail-title-area">
+        <h2>⚠️ Identificación y Valoración de Riesgos</h2>
+        <p>Proceso de evaluación de riesgos de incorrección material</p>
+      </div>
+    </div>
+    <div class="detail-content">
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">📋</div>
+          <h3>Riesgos en Estados Financieros <span class="tag-pill tag-req">§25(a)</span></h3>
+        </div>
+        <p>Riesgos <strong>generalizados</strong> que afectan múltiples afirmaciones. Pueden originarse por un <strong>entorno de control deficiente</strong> o condiciones económicas en declive. Requieren una respuesta global del auditor.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">📊</div>
+          <h3>Riesgos en Afirmaciones <span class="tag-pill tag-req">§25(b)</span></h3>
+        </div>
+        <p>Sobre tipos de transacciones, saldos contables e información a revelar. Las afirmaciones incluyen:</p>
+        <ul>
+          <li><strong>Transacciones:</strong> Ocurrencia, Integridad, Exactitud, Corte, Clasificación, Presentación</li>
+          <li><strong>Saldos:</strong> Existencia, Derechos y Obligaciones, Integridad, Exactitud/Valoración, Clasificación, Presentación</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">🚨</div>
+          <h3>Riesgos Significativos <span class="tag-pill tag-req">§27-28</span></h3>
+        </div>
+        <p>Riesgos que requieren <strong>consideración especial</strong>. El auditor considera:</p>
+        <ul>
+          <li>Si es un riesgo de <strong>fraude</strong></li>
+          <li>Eventos económicos, contables o de otra naturaleza recientes</li>
+          <li><strong>Complejidad</strong> de las transacciones</li>
+          <li>Transacciones con <strong>partes vinculadas</strong></li>
+          <li>Grado de <strong>subjetividad</strong> en la medición</li>
+          <li>Transacciones <strong>inusuales</strong> o ajenas al curso normal</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">🔄</div>
+          <h3>Revisión de la Valoración <span class="tag-pill tag-req">§31</span></h3>
+        </div>
+        <p>La valoración puede variar durante la auditoría. Si la evidencia obtenida es <strong>incongruente</strong> con la valoración inicial, el auditor debe revisarla y modificar los procedimientos posteriores planificados.</p>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-card-icon" style="background:#fef3c7;">📝</div>
+          <h3>Documentación <span class="tag-pill tag-req">§32</span></h3>
+        </div>
+        <ul>
+          <li>Resultados de la <strong>discusión del equipo</strong></li>
+          <li>Elementos clave del conocimiento de la entidad y control interno</li>
+          <li>Riesgos identificados y valorados</li>
+          <li>Riesgos significativos y controles relacionados</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentDetail = null;
+
+  function openDetail(section) {
+    currentDetail = section;
+    const detailView = document.getElementById('detail-' + section);
+    const overviewView = document.getElementById('overviewView');
+
+    overviewView.classList.add('hidden');
+
+    setTimeout(() => {
+      detailView.classList.add('active');
+    }, 100);
+
+    detailView.scrollTop = 0;
+  }
+
+  function closeDetail() {
+    const detailView = document.getElementById('detail-' + currentDetail);
+    const overviewView = document.getElementById('overviewView');
+
+    detailView.classList.remove('active');
+
+    setTimeout(() => {
+      overviewView.classList.remove('hidden');
+    }, 300);
+
+    currentDetail = null;
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && currentDetail) {
+      closeDetail();
+    }
+  });
+</script>
+
+</body>
+</html>
